@@ -14,11 +14,13 @@ import {
   SidebarMenuSub,
   SidebarMenuSubButton,
   SidebarMenuSubItem,
+  SidebarTrigger,
   useSidebar,
 } from '@/components/ui/sidebar'
 import { Avatar, AvatarFallback, AvatarImage } from '../../ui/avatar'
 import {
   Bell,
+  Bolt,
   ChevronRight,
   ChevronsUpDown,
   CreditCard,
@@ -28,7 +30,6 @@ import {
   Settings,
   Sparkles,
   Trello,
-  User,
 } from 'lucide-react'
 import {
   Collapsible,
@@ -44,6 +45,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '../../ui/dropdown-menu'
+import { ModeToggle } from '@/components/themes/mode-toggle'
 
 export function AppSidebar() {
   const data = {
@@ -69,20 +71,20 @@ export function AppSidebar() {
     manager: [
       {
         title: 'Gerenciar',
-        url: '/manager',
+        url: '/manage',
         icon: NotepadText,
         items: [
           {
             title: 'Produtos',
-            url: '/manager/products',
+            url: '/manage/products',
           },
           {
             title: 'Categorias',
-            url: '/manager/clients',
+            url: '/manage/category',
           },
           {
             title: 'Complementos',
-            url: '/manager/clients',
+            url: '/manage/complements',
           },
         ],
       },
@@ -106,10 +108,12 @@ export function AppSidebar() {
   return (
     <Sidebar collapsible="icon">
       <SidebarHeader>
+        <SidebarTrigger />
         <Avatar className="size-8 rounded-md">
           <AvatarImage src="https://avatars.githubusercontent.com/u/185443956?s=96&v=4" />
           <AvatarFallback>EI</AvatarFallback>
         </Avatar>
+        <ModeToggle />
       </SidebarHeader>
       <SidebarContent>
         <SidebarGroup>
@@ -262,8 +266,8 @@ export function AppSidebar() {
                 <DropdownMenuSeparator />
                 <DropdownMenuGroup>
                   <DropdownMenuItem className="hover:bg-yellow-600">
-                    <User />
-                    Conta
+                    <Bolt />
+                    Preferências
                   </DropdownMenuItem>
                   <DropdownMenuItem className="hover:bg-yellow-600">
                     <CreditCard />

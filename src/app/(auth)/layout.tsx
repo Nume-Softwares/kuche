@@ -1,5 +1,6 @@
+import { SearchCommand } from '@/components/auth/search-command'
 import { AppSidebar } from '@/components/auth/siderbar/sidebarMain'
-import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar'
+import { SidebarProvider } from '@/components/ui/sidebar'
 
 export default function AuthLayout({
   children,
@@ -9,10 +10,9 @@ export default function AuthLayout({
   return (
     <SidebarProvider>
       <AppSidebar />
-      <main>
-        <SidebarTrigger />
-        {children}
-      </main>
+      <SearchCommand />
+
+      <main className="w-full">{children}</main>
     </SidebarProvider>
   )
 }

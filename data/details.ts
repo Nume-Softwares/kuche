@@ -1,0 +1,40 @@
+export const details = {
+  id: '1',
+  order: '#034',
+  date: '23/04/2023 - 19:17',
+  customer: 'John Doe',
+  phoneNumber: '(81) 99823-5623',
+  total_price: 'R$ 46,00',
+  observation: 'Sem cebola',
+  status: 'Concluido',
+  delivery: true,
+  address: {
+    street: 'Rua dos Bobos',
+    number: '456',
+    neighborhood: 'Vila Madalena',
+    zipcode: '12345-678',
+  },
+  orders: [
+    {
+      id: '2',
+      order: '#034',
+      quantity: 1,
+      product: 'Pizza de Calabresa',
+      price: 'R$ 25,00',
+    },
+    {
+      id: '3',
+      order: '#034',
+      quantity: 1,
+      product: 'Coca Cola 2L',
+      price: 'R$ 12,00',
+    },
+    {
+      id: '4',
+      order: '#034',
+      quantity: 1,
+      product: 'Mousse de Chocolate',
+      price: 'R$ 9,00',
+    },
+  ],
+}

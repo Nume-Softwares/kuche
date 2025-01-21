@@ -9,12 +9,12 @@ import {
   SidebarGroupLabel,
   SidebarHeader,
   SidebarMenu,
+  SidebarMenuBadge,
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarMenuSub,
   SidebarMenuSubButton,
   SidebarMenuSubItem,
-  SidebarTrigger,
   useSidebar,
 } from '@/components/ui/sidebar'
 import { Avatar, AvatarFallback, AvatarImage } from '../../ui/avatar'
@@ -45,7 +45,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '../../ui/dropdown-menu'
-import { ModeToggle } from '@/components/themes/mode-toggle'
 
 export function AppSidebar() {
   const data = {
@@ -106,14 +105,27 @@ export function AppSidebar() {
   const { isMobile } = useSidebar()
 
   return (
-    <Sidebar collapsible="icon">
+    <Sidebar collapsible="icon" variant="sidebar">
       <SidebarHeader>
-        <SidebarTrigger />
-        <Avatar className="size-8 rounded-md">
-          <AvatarImage src="https://avatars.githubusercontent.com/u/185443956?s=96&v=4" />
-          <AvatarFallback>EI</AvatarFallback>
-        </Avatar>
-        <ModeToggle />
+        <SidebarMenu>
+          <SidebarMenuItem className="mb-2">
+            <SidebarMenuButton
+              size="lg"
+              className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
+            >
+              <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
+                <Avatar className="size-8 rounded-md">
+                  <AvatarImage src="https://avatars.githubusercontent.com/u/185443956?s=96&v=4" />
+                  <AvatarFallback>EI</AvatarFallback>
+                </Avatar>{' '}
+              </div>
+              <div className="grid flex-1 text-left text-sm leading-tight">
+                <span className="truncate font-semibold">Kuche</span>
+                <span className="truncate text-xs">Restaurante</span>
+              </div>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu>
       </SidebarHeader>
       <SidebarContent>
         <SidebarGroup>
@@ -138,6 +150,7 @@ export function AppSidebar() {
                       <span>{item.title}</span>
                     </a>
                   </SidebarMenuButton>
+                  <SidebarMenuBadge>24</SidebarMenuBadge>
                 </SidebarMenuItem>
               ))}
             </SidebarMenu>

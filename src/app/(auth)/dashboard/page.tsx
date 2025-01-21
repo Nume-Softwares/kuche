@@ -4,7 +4,7 @@ import { ChartPie } from '@/components/auth/dashboard/chart-pie'
 
 export default function DashboardPage() {
   return (
-    <div className="flex flex-col gap-4 p-8">
+    <div className="flex flex-col gap-4 p-8 pt-4">
       <header className="mb-4">
         <h1 className="text-4xl font-bold">Ínicio</h1>
         <p className="text-sm text-muted-foreground">

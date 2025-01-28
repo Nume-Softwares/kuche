@@ -1,0 +1,28 @@
+import NextAuth from 'next-auth'
+import Credentials from 'next-auth/providers/credentials'
+import Google from 'next-auth/providers/google'
+
+export const { handlers, signIn, signOut, auth } = NextAuth({
+  providers: [
+    Credentials({
+      credentials: {
+        id: {},
+        name: {},
+        email: {},
+      },
+      authorize: async (credentials) => {
+        if (!credentials || !credentials.email || !credentials.name) {
+          return null
+        }
+
+        const user = {
+          name: credentials.name as string,
+          email: credentials.email as string,
+        }
+
+        return user
+      },
+    }),
+    Google,
+  ],
+})

@@ -2,6 +2,8 @@ import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import './globals.css'
 import { ThemeProvider } from '@/components/themes/theme-provider'
+import { Toaster } from 'sonner'
+import ReactQueryProviders from './reactQueryProvider'
 
 const inter = Inter({
   subsets: ['latin'],
@@ -21,14 +23,18 @@ export default function RootLayout({
   return (
     <html lang="ptBR" suppressHydrationWarning>
       <body className={`${inter.className}`}>
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="system"
-          enableSystem
-          disableTransitionOnChange
-        >
-          {children}
-        </ThemeProvider>
+        <ReactQueryProviders>
+          <Toaster richColors />
+
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="system"
+            enableSystem
+            disableTransitionOnChange
+          >
+            {children}
+          </ThemeProvider>
+        </ReactQueryProviders>
       </body>
     </html>
   )

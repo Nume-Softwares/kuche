@@ -15,36 +15,15 @@ import {
   SidebarMenuSub,
   SidebarMenuSubButton,
   SidebarMenuSubItem,
-  useSidebar,
 } from '@/components/ui/sidebar'
 import { Avatar, AvatarFallback, AvatarImage } from '../../ui/avatar'
-import {
-  Bell,
-  Bolt,
-  ChevronRight,
-  ChevronsUpDown,
-  CreditCard,
-  Home,
-  LogOut,
-  NotepadText,
-  Settings,
-  Sparkles,
-  Trello,
-} from 'lucide-react'
+import { ChevronRight, Home, NotepadText, Settings, Trello } from 'lucide-react'
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
 } from '../../ui/collapsible'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuGroup,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '../../ui/dropdown-menu'
+import { DropdownMenuUser } from './dropdown-menu-user'
 
 export function AppSidebar() {
   const data = {
@@ -101,8 +80,6 @@ export function AppSidebar() {
       },
     ],
   }
-
-  const { isMobile } = useSidebar()
 
   return (
     <Sidebar collapsible="icon" variant="sidebar">
@@ -227,77 +204,7 @@ export function AppSidebar() {
       <SidebarFooter>
         <SidebarMenu>
           <SidebarMenuItem>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <SidebarMenuButton
-                  size="lg"
-                  className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
-                >
-                  <Avatar className="size-8 rounded-lg">
-                    <AvatarImage src={data.user.avatar} alt={data.user.name} />
-                    <AvatarFallback className="rounded-lg">CN</AvatarFallback>
-                  </Avatar>
-                  <div className="grid flex-1 text-left text-sm leading-tight">
-                    <span className="truncate font-semibold">
-                      {data.user.name}
-                    </span>
-                    <span className="truncate text-xs">{data.user.role}</span>
-                  </div>
-                  <ChevronsUpDown className="ml-auto size-4" />
-                </SidebarMenuButton>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent
-                className="w-[--radix-dropdown-menu-trigger-width] min-w-56 rounded-lg"
-                side={isMobile ? 'bottom' : 'right'}
-                align="end"
-                sideOffset={4}
-              >
-                <DropdownMenuLabel className="p-0 font-normal">
-                  <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
-                    <Avatar className="size-8 rounded-lg">
-                      <AvatarImage
-                        src={data.user.avatar}
-                        alt={data.user.name}
-                      />
-                      <AvatarFallback className="rounded-lg">CN</AvatarFallback>
-                    </Avatar>
-                    <div className="grid flex-1 text-left text-sm leading-tight">
-                      <span className="truncate font-semibold">
-                        {data.user.name}
-                      </span>
-                      <span className="truncate text-xs">{data.user.role}</span>
-                    </div>
-                  </div>
-                </DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuGroup>
-                  <DropdownMenuItem>
-                    <Sparkles className="text-green-600" />
-                    Faça upgrade para o Pro
-                  </DropdownMenuItem>
-                </DropdownMenuGroup>
-                <DropdownMenuSeparator />
-                <DropdownMenuGroup>
-                  <DropdownMenuItem className="hover:bg-yellow-600">
-                    <Bolt />
-                    Preferências
-                  </DropdownMenuItem>
-                  <DropdownMenuItem className="hover:bg-yellow-600">
-                    <CreditCard />
-                    Assinaturas
-                  </DropdownMenuItem>
-                  <DropdownMenuItem className="hover:bg-yellow-600">
-                    <Bell />
-                    Notificações
-                  </DropdownMenuItem>
-                </DropdownMenuGroup>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem className="hover:bg-yellow-600">
-                  <LogOut />
-                  Sair
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <DropdownMenuUser data={data} />
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarFooter>

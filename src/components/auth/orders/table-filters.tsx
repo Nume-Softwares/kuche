@@ -16,7 +16,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { cn } from '@/lib/utils'
-import { CalendarIcon } from 'lucide-react'
+import { CalendarIcon, X } from 'lucide-react'
 import { useState } from 'react'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
@@ -88,7 +88,10 @@ export function TableFilters() {
           </SelectContent>
         </Select>
 
-        <Button variant="outline">Limpar Filtro</Button>
+        <Button variant="outline">
+          {' '}
+          <X /> Limpar Filtro
+        </Button>
       </div>
 
       <div>

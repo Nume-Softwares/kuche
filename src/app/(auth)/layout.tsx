@@ -1,3 +1,4 @@
+import { auth } from '@/auth'
 import { SearchCommand } from '@/components/auth/search-command'
 import { AppSidebar } from '@/components/auth/siderbar/sidebarMain'
 import { ModeToggle } from '@/components/themes/mode-toggle'
@@ -11,12 +12,19 @@ import {
 } from '@/components/ui/sheet'
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar'
 import { Bell } from 'lucide-react'
+import { redirect } from 'next/navigation'
 
-export default function AuthLayout({
+export default async function AuthLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
+  const session = await auth()
+
+  if (!session) {
+    redirect('/sign-in')
+  }
+
   return (
     <SidebarProvider>
       <AppSidebar />

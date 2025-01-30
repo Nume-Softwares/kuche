@@ -1,4 +1,4 @@
-import { TableComplements } from '@/components/auth/manage/complements/table-complements'
+import { TableMembers } from '@/components/auth/settings/member-access/table-members'
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 
@@ -18,7 +18,7 @@ export default async function AccountSettingsPage() {
           Crie ou gerencie seus usuários da plataforma
         </p>
       </header>
-      <TableComplements />
+      <TableMembers />
     </div>
   )
 }

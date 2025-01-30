@@ -5,13 +5,25 @@ export async function POST(request: Request) {
 
   const body = await request.json()
 
-  const response = await fetch(`http://localhost:3333/restaurant/sign-in`, {
-    headers: {
-      'Content-Type': 'application/json',
+  const additionalRestaurantId = {
+    restaurantId: process.env.RESTAURANT_ID,
+  }
+
+  const mergedBody = {
+    ...body,
+    ...additionalRestaurantId,
+  }
+
+  const response = await fetch(
+    `${process.env.NEXT_PUBLIC_BASE_API_URL}/restaurant/member/sign-in`,
+    {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(mergedBody),
+      method: 'POST',
     },
-    body: JSON.stringify(body),
-    method: 'POST',
-  })
+  )
 
   const data = await response.json()
 
@@ -49,4 +61,30 @@ export async function POST(request: Request) {
       status: 200,
     },
   )
+}
+
+// Função para fazer requisições autenticadas
+export async function authenticatedFetch(
+  url: string,
+  options: RequestInit = {},
+) {
+  const cookieStore = cookies()
+  const token = (await cookieStore).get('jwt')?.value
+
+  if (!token) {
+    throw new Error('Token JWT não encontrado')
+  }
+
+  const headers = {
+    ...options.headers,
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${token}`,
+  }
+
+  const response = await fetch(url, {
+    ...options,
+    headers,
+  })
+
+  return response
 }

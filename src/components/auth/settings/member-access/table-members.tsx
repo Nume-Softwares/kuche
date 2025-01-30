@@ -1,15 +1,6 @@
 'use client'
 
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
-
-import {
   Table,
   TableBody,
   TableCell,
@@ -17,9 +8,8 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { ArchiveRestore, ScanSearch, Settings, Trash2 } from 'lucide-react'
 import { useState } from 'react'
-import { TableFilters } from './table-filters'
+import { TableFilters } from '../../manage/complements/table-filters'
 import { useQuery } from '@tanstack/react-query'
 import {
   Pagination,
@@ -30,6 +20,14 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from '@/components/ui/pagination'
+import { ArchiveRestore, Trash2 } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import {
+  HoverCard,
+  HoverCardContent,
+  HoverCardTrigger,
+} from '@/components/ui/hover-card'
+import { EditMember } from './edit-member'
 
 interface Member {
   members: {
@@ -45,7 +43,7 @@ interface Member {
   totalPages: number
 }
 
-export function TableComplements() {
+export function TableMembers() {
   const [currentPage, setCurrentPage] = useState(1)
 
   const { data: getMembers } = useQuery({
@@ -97,7 +95,9 @@ export function TableComplements() {
                 <TableHead>Nome</TableHead>
                 <TableHead className="w-[120px]">Perfil</TableHead>
                 <TableHead className="w-[80px]">Status</TableHead>
-                <TableHead className="w-[80px] text-center">Ações</TableHead>
+                <TableHead className="w-[44px] text-center" />
+                <TableHead className="w-[44px] text-center" />
+                <TableHead className="w-[44px] text-center" />
               </TableRow>
             </TableHeader>
 
@@ -120,28 +120,29 @@ export function TableComplements() {
                         {member.isActive ? 'Ativo' : 'Inativo'}
                       </div>
                     </TableCell>
-                    <TableCell>
-                      <div className="flex w-full justify-center">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger>
-                            <Settings className="size-4" />
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent>
-                            <DropdownMenuLabel>Ações</DropdownMenuLabel>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem>
-                              <ArchiveRestore className="size-4" /> Arquivar
-                            </DropdownMenuItem>
-                            <DropdownMenuItem>
-                              <ScanSearch className="size-4" />
-                              Visualizar Items
-                            </DropdownMenuItem>
-                            <DropdownMenuItem>
-                              <Trash2 /> Excluir
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </div>
+
+                    <TableCell className="px-1">
+                      <EditMember memberId={member.id} />
+                    </TableCell>
+                    <TableCell className="px-1">
+                      <HoverCard>
+                        <HoverCardTrigger asChild>
+                          <Button variant={'outline'} className="size-9">
+                            <ArchiveRestore className="size-4" />
+                          </Button>
+                        </HoverCardTrigger>
+                        <HoverCardContent className="w-full">
+                          Arquivar Usuário
+                        </HoverCardContent>
+                      </HoverCard>
+                    </TableCell>
+                    <TableCell className="pl-1 pr-2">
+                      <Button
+                        variant={'outline'}
+                        className="size-9 text-red-500 hover:text-red-600"
+                      >
+                        <Trash2 className="size-4" />
+                      </Button>
                     </TableCell>
                   </TableRow>
                 ))}

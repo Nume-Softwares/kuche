@@ -1,5 +1,3 @@
-import { TableComplements } from '@/components/auth/manage/complements/table-complements'
-
 export default function ComplementsPage() {
   return (
     <div className="flex flex-col gap-4 p-8">

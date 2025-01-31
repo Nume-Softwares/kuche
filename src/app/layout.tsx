@@ -15,7 +15,7 @@ export const metadata: Metadata = {
   description: 'Gerenciamento de Restaurantes',
 }
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode

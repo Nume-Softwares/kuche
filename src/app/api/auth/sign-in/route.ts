@@ -1,4 +1,5 @@
 import { cookies } from 'next/headers'
+import { NextRequest } from 'next/server'
 
 export async function POST(request: Request) {
   const cookieStore = await cookies()
@@ -67,9 +68,9 @@ export async function POST(request: Request) {
 export async function authenticatedFetch(
   url: string,
   options: RequestInit = {},
+  request: NextRequest,
 ) {
-  const cookieStore = cookies()
-  const token = (await cookieStore).get('jwt')?.value
+  const token = request.cookies.get('jwt')
 
   if (!token) {
     throw new Error('Token JWT não encontrado')

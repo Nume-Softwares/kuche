@@ -3,7 +3,7 @@
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { ComponentPropsWithoutRef } from 'react'
+import { useEffect } from 'react'
 import { signIn } from 'next-auth/react' // Certifique-se de usar o `signIn` correto do next-auth
 import { z } from 'zod'
 import {
@@ -18,6 +18,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
+import { Session } from 'next-auth'
 
 const signInFormSchema = z.object({
   email: z.string().email(),
@@ -26,17 +27,33 @@ const signInFormSchema = z.object({
 
 type SignInFormType = z.infer<typeof signInFormSchema>
 
-export function SignInForm({
-  className,
-  ...props
-}: ComponentPropsWithoutRef<'form'>) {
+interface SignInFormProps {
+  session: Session | null
+}
+
+export function SignInForm({ session }: SignInFormProps) {
   const router = useRouter()
+
+  useEffect(() => {
+    if (!session) {
+      return
+    }
+
+    toast.success('Usuário autenticado com o Google com sucesso!')
+
+    router.push('/dashboard')
+  }, [session])
 
   async function handleSignGoogle() {
     try {
-      await signIn('google')
+      const result = await signIn('google', { redirect: false })
+
+      if (result?.error) {
+        throw new Error(result.error)
+      }
     } catch (error) {
       console.error('Erro ao fazer login com o Google:', error)
+      toast.error('Erro ao fazer login com o Google')
     }
   }
 
@@ -110,8 +127,7 @@ export function SignInForm({
     <Form {...methods}>
       <form
         onSubmit={handleSubmit(handleSignInCredentials)}
-        className={cn('flex flex-col gap-6', className)}
-        {...props}
+        className={cn('flex flex-col gap-6')}
       >
         <div className="flex flex-col items-center gap-2 text-center">
           <h1 className="text-2xl font-bold">Faça login na sua conta</h1>

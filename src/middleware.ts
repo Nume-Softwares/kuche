@@ -19,8 +19,6 @@ const publicRoutes = [
 const REDIRECT_WHEN_NOT_AUTHENTICATED_ROUTE = '/sign-in'
 
 export function middleware(request: NextRequest) {
-  console.log('funcionou')
-
   const path = request.nextUrl.pathname
   const publicRoute = publicRoutes.find((route) => route.path === path)
   const authToken = request.cookies.get('jwt')

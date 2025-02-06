@@ -8,7 +8,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { TableFilters } from '../../manage/complements/table-filters'
 import { useQuery } from '@tanstack/react-query'
 import {
@@ -20,16 +20,16 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from '@/components/ui/pagination'
-import { ArchiveRestore, Trash2 } from 'lucide-react'
-import { Button } from '@/components/ui/button'
+import { EditMember } from './edit-member'
+import { useRouter, useSearchParams } from 'next/navigation'
+import { DialogMember } from './dialog-member'
 import {
   HoverCard,
   HoverCardContent,
   HoverCardTrigger,
 } from '@/components/ui/hover-card'
-import { EditMember } from './edit-member'
 
-interface Member {
+export interface Member {
   members: {
     id: string
     name: string
@@ -44,15 +44,50 @@ interface Member {
 }
 
 export function TableMembers() {
-  const [currentPage, setCurrentPage] = useState(1)
+  const router = useRouter()
+  const searchParams = useSearchParams()
+  const [currentPage, setCurrentPage] = useState<number>(1)
+  const [searchTerm, setSearchTerm] = useState<string | null>('')
+
+  useEffect(() => {
+    const page = searchParams.get('page')
+    const search = searchParams.get('search')
+
+    if (!page) {
+      router.replace(
+        `/settings/accounts?page=${currentPage}&search=${searchTerm}`,
+      )
+    } else {
+      setCurrentPage(Number(page))
+    }
+
+    if (search) {
+      setSearchTerm(search)
+    }
+  }, [searchParams, router])
+
+  useEffect(() => {
+    router.push(`/settings/accounts?page=${currentPage}`)
+  }, [currentPage, router])
 
   const { data: getMembers } = useQuery({
-    queryKey: ['members', { currentPage }],
+    queryKey: ['members', { currentPage, searchTerm }],
     queryFn: () =>
-      fetch(`/api/members?page=${currentPage}`)
+      fetch(`/api/members?page=${currentPage}&search=${searchTerm}`)
         .then((res) => res.json())
         .then((data: Member) => data),
   })
+
+  useEffect(() => {
+    const page = searchParams.get('page')
+
+    if (!page) return
+    if (!getMembers) return
+
+    if (Number(page) > getMembers?.totalPages) {
+      router.replace(`/settings/accounts?page=${getMembers?.totalPages}`)
+    }
+  }, [getMembers])
 
   function statusColor(status: boolean) {
     if (status) {
@@ -82,10 +117,18 @@ export function TableMembers() {
 
   const totalPages = getMembers?.totalPages ?? 1
 
+  function changeSearchTerm(term: string) {
+    setSearchTerm(term)
+    setCurrentPage(1)
+  }
+
   return (
     <div className="flex h-full flex-col gap-4">
       <div className="h-full space-y-2.5">
-        <TableFilters />
+        <TableFilters
+          changeSearchTerm={changeSearchTerm}
+          searchTerm={searchTerm}
+        />
 
         <div className="flex h-full flex-col justify-between rounded-md border pb-4">
           <Table>
@@ -126,23 +169,18 @@ export function TableMembers() {
                     </TableCell>
                     <TableCell className="px-1">
                       <HoverCard>
-                        <HoverCardTrigger asChild>
-                          <Button variant={'outline'} className="size-9">
-                            <ArchiveRestore className="size-4" />
-                          </Button>
+                        <HoverCardTrigger>
+                          <DialogMember member={member} trigger="STATUS" />
                         </HoverCardTrigger>
                         <HoverCardContent className="w-full">
-                          Arquivar Usuário
+                          {member.isActive
+                            ? 'Desativar Usuário'
+                            : 'Ativar Usuário'}
                         </HoverCardContent>
                       </HoverCard>
                     </TableCell>
                     <TableCell className="pl-1 pr-2">
-                      <Button
-                        variant={'outline'}
-                        className="size-9 text-red-500 hover:text-red-600"
-                      >
-                        <Trash2 className="size-4" />
-                      </Button>
+                      <DialogMember member={member} trigger="DELETE" />
                     </TableCell>
                   </TableRow>
                 ))}

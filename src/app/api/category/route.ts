@@ -11,7 +11,7 @@ export async function GET(request: NextRequest) {
   const response = await authenticatedFetch(
     `${
       process.env.NEXT_PUBLIC_BASE_API_URL
-    }/restaurant/members?page=${page}&search=${search || ''}`,
+    }/restaurant/categories?page=${page}&search=${search || ''}`,
     {
       method: 'GET',
     },

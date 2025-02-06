@@ -33,7 +33,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         try {
           // Chama o endpoint do backend para verificar o e-mail e obter o token JWT
           const backendResponse = await fetch(
-            'http://localhost:3333/restaurant/member/google',
+            `${process.env.NEXT_PUBLIC_BASE_API_URL}/restaurant/member/google`,
             {
               method: 'POST',
               headers: {
@@ -47,7 +47,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           )
 
           if (!backendResponse.ok) {
-            return false
+            return '/sign-in?status=google_failed'
           }
 
           const { access_token } = await backendResponse.json()
@@ -60,8 +60,10 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             maxAge: 60 * 60 * 24,
             path: '/',
           })
+
+          return '/sign-in?status=true'
         } catch (error) {
-          console.error('Erro ao fazer login com o Google:', error)
+          console.log('Erro ao fazer login com o Google:', error)
           return false
         }
       }

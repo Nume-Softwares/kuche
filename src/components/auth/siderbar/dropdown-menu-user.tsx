@@ -1,3 +1,5 @@
+'use client'
+
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import {
   DropdownMenu,
@@ -18,6 +20,8 @@ import {
   Sparkles,
 } from 'lucide-react'
 import { signOut } from 'next-auth/react'
+import { useRouter } from 'next/navigation'
+import { toast } from 'sonner'
 
 interface DropdownMenuUserProps {
   data: {
@@ -30,10 +34,16 @@ interface DropdownMenuUserProps {
 }
 
 export function DropdownMenuUser({ data }: DropdownMenuUserProps) {
+  const router = useRouter()
+
   async function handleSignOut() {
-    await signOut({
-      redirectTo: '/sign-in',
-    })
+    await signOut({ redirect: false })
+
+    await fetch('/api/auth/sign-out', { method: 'POST' })
+
+    toast.info('Usuário desconectado!')
+
+    router.push('/sign-in')
   }
 
   const { isMobile } = useSidebar()

@@ -22,32 +22,82 @@ import { TableFilters } from './table-filters'
 import {
   Pagination,
   PaginationContent,
+  PaginationEllipsis,
   PaginationItem,
   PaginationLink,
   PaginationNext,
   PaginationPrevious,
 } from '@/components/ui/pagination'
-import { useState } from 'react'
-import { category } from '../../../../../data/category'
+import { useEffect, useState } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
+import { useQuery } from '@tanstack/react-query'
+import {
+  HoverCard,
+  HoverCardContent,
+  HoverCardTrigger,
+} from '@/components/ui/hover-card'
+
+export interface Categories {
+  categories: {
+    id: string
+    name: string
+    isActive: boolean
+    totalMenuItems: number
+  }[]
+  totalPages: number
+}
 
 export function TableCategory() {
-  const [currentPage, setCurrentPage] = useState(1)
-  const itemsPerPage = 5
+  const router = useRouter()
+  const searchParams = useSearchParams()
+  const [currentPage, setCurrentPage] = useState<number>(1)
+  const [searchTerm, setSearchTerm] = useState<string | null>('')
 
-  function statusColor(status: boolean) {
-    if (status) {
-      return 'bg-green-500'
+  useEffect(() => {
+    const page = searchParams.get('page')
+    const search = searchParams.get('search')
+
+    if (!page) {
+      router.replace(
+        `/manage/category?page=${currentPage}&search=${searchTerm}`,
+      )
     } else {
-      return 'bg-yellow-500'
+      setCurrentPage(Number(page))
+    }
+
+    if (search) {
+      setSearchTerm(search)
+    }
+  }, [searchParams, router])
+
+  useEffect(() => {
+    router.push(`/manage/category?page=${currentPage}`)
+  }, [currentPage, router])
+
+  const { data: getCategories } = useQuery({
+    queryKey: ['categories', { currentPage, searchTerm }],
+    queryFn: () =>
+      fetch(`/api/category?page=${currentPage}&search=${searchTerm}`)
+        .then((res) => res.json())
+        .then((data: Categories) => data),
+  })
+
+  useEffect(() => {
+    const page = searchParams.get('page')
+
+    if (!page) return
+    if (!getCategories) return
+
+    if (Number(page) > getCategories?.totalPages) {
+      router.replace(`/settings/accounts?page=${getCategories?.totalPages}`)
+    }
+  }, [getCategories])
+
+  const handlePageChange = (page: number) => {
+    if (page > 0 && page <= (getCategories?.totalPages || 1)) {
+      setCurrentPage(page)
     }
   }
-
-  const totalPages = Math.ceil(category.length / itemsPerPage)
-
-  const currentOrders = category.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage,
-  )
 
   const handlePreviousPage = () => {
     if (currentPage > 1) {
@@ -56,8 +106,18 @@ export function TableCategory() {
   }
 
   const handleNextPage = () => {
-    if (currentPage < totalPages) {
+    if (currentPage < (getCategories?.totalPages || 1)) {
       setCurrentPage(currentPage + 1)
+    }
+  }
+
+  const totalPages = getCategories?.totalPages ?? 1
+
+  function statusColor(status: boolean) {
+    if (status) {
+      return 'bg-green-500'
+    } else {
+      return 'bg-yellow-500'
     }
   }
 
@@ -74,18 +134,20 @@ export function TableCategory() {
                 <TableHead>Nome</TableHead>
                 <TableHead className="w-[120px]">Qntd</TableHead>
                 <TableHead className="w-[80px]">Status</TableHead>
-                <TableHead className="w-[80px] text-center">Ações</TableHead>
+                <TableHead className="w-[44px] text-center" />
+                <TableHead className="w-[44px] text-center" />
+                <TableHead className="w-[44px] text-center" />
               </TableRow>
             </TableHeader>
 
             <TableBody>
-              {currentOrders.map((category) => (
+              {getCategories?.categories.map((category) => (
                 <TableRow key={category.id}>
                   <TableCell className="max-w-[180px] truncate">
                     {category.id}
                   </TableCell>
                   <TableCell>{category.name}</TableCell>
-                  <TableCell>{category.qntdItems}</TableCell>
+                  <TableCell>{category.totalMenuItems}</TableCell>
                   <TableCell>
                     <div className="flex items-center gap-1">
                       <div
@@ -96,28 +158,23 @@ export function TableCategory() {
                       {category.isActive ? 'Ativo' : 'Inativo'}
                     </div>
                   </TableCell>
-                  <TableCell>
-                    <div className="flex w-full justify-center">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger>
-                          <Settings className="size-4" />
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent>
-                          <DropdownMenuLabel>Ações</DropdownMenuLabel>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem>
-                            <ArchiveRestore className="size-4" /> Arquivar
-                          </DropdownMenuItem>
-                          <DropdownMenuItem>
-                            <ScanSearch className="size-4" />
-                            Visualizar Items
-                          </DropdownMenuItem>
-                          <DropdownMenuItem>
-                            <Trash2 /> Excluir
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </div>
+                  <TableCell className="px-1">
+                    <EditMember memberId={member.id} />
+                  </TableCell>
+                  <TableCell className="px-1">
+                    <HoverCard>
+                      <HoverCardTrigger>
+                        <DialogMember member={member} trigger="STATUS" />
+                      </HoverCardTrigger>
+                      <HoverCardContent className="w-full">
+                        {category.isActive
+                          ? 'Desativar Usuário'
+                          : 'Ativar Usuário'}
+                      </HoverCardContent>
+                    </HoverCard>
+                  </TableCell>
+                  <TableCell className="pl-1 pr-2">
+                    <DialogMember member={member} trigger="DELETE" />
                   </TableCell>
                 </TableRow>
               ))}
@@ -128,29 +185,29 @@ export function TableCategory() {
         <Pagination>
           <PaginationContent>
             <PaginationItem>
-              <PaginationPrevious
-                href="#"
-                onClick={handlePreviousPage}
-                disabled={currentPage === 1}
-              />
+              <PaginationPrevious onClick={handlePreviousPage} />
             </PaginationItem>
-            {Array.from({ length: totalPages }).map((_, index) => (
-              <PaginationItem key={index}>
+
+            {/* Gerar os links das páginas */}
+            {Array.from({ length: totalPages }, (_, i) => (
+              <PaginationItem key={i}>
                 <PaginationLink
-                  href="#"
-                  onClick={() => setCurrentPage(index + 1)}
-                  className={currentPage === index + 1 ? 'active' : ''}
+                  onClick={() => handlePageChange(i + 1)}
+                  className={currentPage === i + 1 ? 'bg-zinc-200' : ''}
                 >
-                  {index + 1}
+                  {i + 1}
                 </PaginationLink>
               </PaginationItem>
             ))}
+
+            {totalPages > 5 && currentPage < totalPages - 1 && (
+              <PaginationItem>
+                <PaginationEllipsis />
+              </PaginationItem>
+            )}
+
             <PaginationItem>
-              <PaginationNext
-                href="#"
-                onClick={handleNextPage}
-                disabled={currentPage === totalPages}
-              />
+              <PaginationNext onClick={handleNextPage} />
             </PaginationItem>
           </PaginationContent>
         </Pagination>

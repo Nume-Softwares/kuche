@@ -1,5 +1,5 @@
 import { cookies } from 'next/headers'
-import { NextRequest } from 'next/server'
+import { redirect } from 'next/navigation'
 
 export async function POST(request: Request) {
   const cookieStore = await cookies()
@@ -68,18 +68,17 @@ export async function POST(request: Request) {
 export async function authenticatedFetch(
   url: string,
   options: RequestInit = {},
-  request: NextRequest,
 ) {
-  const token = request.cookies.get('jwt')
+  const cookieStore = await cookies()
+  const jwt = cookieStore.get('jwt')
 
-  if (!token) {
-    throw new Error('Token JWT não encontrado')
+  if (!jwt) {
+    redirect('/sign-in')
   }
 
   const headers = {
     ...options.headers,
-    'Content-Type': 'application/json',
-    Authorization: `Bearer ${token}`,
+    Authorization: `Bearer ${jwt.value}`,
   }
 
   const response = await fetch(url, {

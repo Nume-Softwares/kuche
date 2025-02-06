@@ -17,8 +17,7 @@ import {
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { toast } from 'sonner'
-import { useRouter } from 'next/navigation'
-import { Session } from 'next-auth'
+import { useRouter, useSearchParams } from 'next/navigation'
 
 const signInFormSchema = z.object({
   email: z.string().email(),
@@ -27,22 +26,22 @@ const signInFormSchema = z.object({
 
 type SignInFormType = z.infer<typeof signInFormSchema>
 
-interface SignInFormProps {
-  session: Session | null
-}
-
-export function SignInForm({ session }: SignInFormProps) {
+export function SignInForm() {
   const router = useRouter()
+  const searchParams = useSearchParams()
 
   useEffect(() => {
-    if (!session) {
-      return
+    const status = searchParams.get('status')
+    if (status === 'google_failed') {
+      toast.error('Erro ao fazer login com o Google. Tente novamente.')
     }
 
-    toast.success('Usuário autenticado com o Google com sucesso!')
+    if (status === 'true') {
+      toast.success('Usuário autenticado com o Google com sucesso!')
 
-    router.push('/dashboard')
-  }, [session])
+      router.push('/dashboard')
+    }
+  }, [searchParams])
 
   async function handleSignGoogle() {
     try {
@@ -82,14 +81,11 @@ export function SignInForm({ session }: SignInFormProps) {
 
       const response = await authRestaurant.json()
 
-      console.log('meu resposne', response)
-
       if (authRestaurant.status === 500) {
         return toast.error('Erro inesperado ao entrar no sistema')
       }
 
       if (authRestaurant.status === 401) {
-        console.log('caiu aqui')
         return toast.error('Credenciais inválidas')
       }
 
@@ -102,19 +98,16 @@ export function SignInForm({ session }: SignInFormProps) {
         redirect: false,
       })
 
-      console.log('meu result', result)
-
-      if (result?.error) {
+      if (!result?.ok) {
         return
       } else {
-        router.push('/dashboard')
+        router.replace('/dashboard')
         toast.success('Login bem-sucedido')
       }
     } catch (error) {
       if (error instanceof Error) {
-        console.log('meu erro', JSON.parse(error.message))
-
         const { statusCode } = JSON.parse(error.message)
+
         if (statusCode === 401) {
           return toast.error('Credenciais invalidas!')
         }

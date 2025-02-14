@@ -4,7 +4,7 @@ export const products = [
     isActive: true,
     description:
       'React framework for building server-rendered and statically generated websites.',
-    image: 'https://a.rgbimg.com/users/x/xy/xymonau/600/ttLhPMi.jpg',
+    image: '',
     price: 58.9,
     items: [
       {
@@ -34,7 +34,7 @@ export const products = [
     isActive: false,
     description:
       'React framework for building server-rendered and statically generated websites.',
-    image: 'https://a.rgbimg.com/users/x/xy/xymonau/600/ttLhPMi.jpg',
+    image: '',
     price: 37.9,
     items: [
       {
@@ -64,7 +64,7 @@ export const products = [
     isActive: true,
     description:
       'React framework for building server-rendered and statically generated websites.',
-    image: 'https://a.rgbimg.com/users/x/xy/xymonau/600/ttLhPMi.jpg',
+    image: '',
     price: 46.89,
     items: [
       {
@@ -94,7 +94,7 @@ export const products = [
     isActive: true,
     description:
       'React framework for building server-rendered and statically generated websites.',
-    image: 'https://a.rgbimg.com/users/x/xy/xymonau/600/ttLhPMi.jpg',
+    image: '',
     price: 27.9,
     items: [
       {
@@ -124,7 +124,7 @@ export const products = [
     isActive: true,
     description:
       'React framework for building server-rendered and statically generated websites.',
-    image: 'https://a.rgbimg.com/users/x/xy/xymonau/600/ttLhPMi.jpg',
+    image: '',
     price: 12.9,
     items: [
       {
@@ -154,7 +154,7 @@ export const products = [
     isActive: false,
     description:
       'React framework for building server-rendered and statically generated websites.',
-    image: 'https://a.rgbimg.com/users/x/xy/xymonau/600/ttLhPMi.jpg',
+    image: '',
     price: 68.9,
     items: [
       {
@@ -184,7 +184,7 @@ export const products = [
     isActive: false,
     description:
       'React framework for building server-rendered and statically generated websites.',
-    image: 'https://a.rgbimg.com/users/x/xy/xymonau/600/ttLhPMi.jpg',
+    image: '',
     price: 14.9,
     items: [
       {
@@ -214,7 +214,7 @@ export const products = [
     isActive: true,
     description:
       'React framework for building server-rendered and statically generated websites.',
-    image: 'https://a.rgbimg.com/users/x/xy/xymonau/600/ttLhPMi.jpg',
+    image: '',
     price: 7.9,
     items: [
       {

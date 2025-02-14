@@ -1,12 +1,11 @@
 import type { NextConfig } from 'next'
 
 const nextConfig: NextConfig = {
-  /* config options here */
   images: {
     remotePatterns: [
       {
         protocol: 'https',
-        hostname: 'a.rgbimg.com',
+        hostname: 'kuchi-images.s3.sa-east-1.amazonaws.com', // Adicione o domínio correto
         pathname: '/**',
       },
     ],

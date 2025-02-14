@@ -12,7 +12,7 @@ export async function GET(request: NextRequest) {
   const response = await authenticatedFetch(
     `${
       process.env.NEXT_PUBLIC_BASE_API_URL
-    }/restaurant/members?page=${page}&search=${search || ''}`,
+    }/restaurant/menu-item-option?page=${page}&search=${search || ''}`,
     {
       method: 'GET',
     },
@@ -28,7 +28,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
 
     const response = await authenticatedFetch(
-      `${process.env.NEXT_PUBLIC_BASE_API_URL}/restaurant/members`,
+      `${process.env.NEXT_PUBLIC_BASE_API_URL}/restaurant/menu-item-option`,
       {
         method: 'POST',
         headers: {
@@ -42,7 +42,7 @@ export async function POST(request: NextRequest) {
       const errorData = await response.json()
 
       return NextResponse.json(
-        { error: errorData.message || 'Erro ao atualizar membro' },
+        { error: errorData.message || 'Erro ao criar complemento' },
         { status: response.status },
       )
     }
@@ -53,7 +53,7 @@ export async function POST(request: NextRequest) {
 
     if (error instanceof ZodError) {
       return NextResponse.json(
-        { error: 'Erro ao criar membro' },
+        { error: 'Erro ao criar complemento' },
         { status: 404 },
       )
     }

@@ -1,36 +1,60 @@
-const getCategoryIdRestaurantSchema = z.string().uuid()
+import { NextRequest, NextResponse } from 'next/server'
+import { authenticatedFetch } from '../auth/sign-in/route'
+import { ZodError } from 'zod'
 
-export async function GET(
-  request: NextRequest,
-  { params }: { params: { memberId: string } },
-) {
+export async function GET(request: NextRequest) {
+  const url = new URL(request.url)
+  const searchParams = url.searchParams
+
+  const page = searchParams.get('page')
+  const search = searchParams.get('search')
+
+  const response = await authenticatedFetch(
+    `${
+      process.env.NEXT_PUBLIC_BASE_API_URL
+    }/restaurant/categories?page=${page}&search=${search || ''}`,
+    {
+      method: 'GET',
+    },
+  )
+
+  const data = await response.json()
+
+  return new Response(JSON.stringify(data), { status: response.status })
+}
+
+export async function POST(request: NextRequest) {
   try {
-    const { memberId } = await params
-
-    getCategoryIdRestaurantSchema.parse(memberId)
+    const body = await request.json()
 
     const response = await authenticatedFetch(
-      `${process.env.NEXT_PUBLIC_BASE_API_URL}/restaurant/member/${memberId}`,
+      `${process.env.NEXT_PUBLIC_BASE_API_URL}/restaurant/categories`,
       {
-        method: 'GET',
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(body),
       },
     )
 
     if (!response.ok) {
       const errorData = await response.json()
+
       return NextResponse.json(
-        { error: errorData.message || 'Erro ao buscar membro' },
+        { error: errorData.message || 'Erro ao criar categoria' },
         { status: response.status },
       )
     }
 
-    const member = await response.json()
-    return NextResponse.json(member)
+    return new NextResponse(null, { status: 201 })
   } catch (error) {
+    console.log('Erro no Route Handler:', error)
+
     if (error instanceof ZodError) {
       return NextResponse.json(
-        { error: 'ID do membro inválido' },
-        { status: 400 },
+        { error: 'Erro ao criar categoria' },
+        { status: 404 },
       )
     }
     return NextResponse.json(

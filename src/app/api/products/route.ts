@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { authenticatedFetch } from '../auth/sign-in/route'
-import { ZodError } from 'zod'
 
 export async function GET(request: NextRequest) {
   const url = new URL(request.url)
@@ -12,7 +11,7 @@ export async function GET(request: NextRequest) {
   const response = await authenticatedFetch(
     `${
       process.env.NEXT_PUBLIC_BASE_API_URL
-    }/restaurant/members?page=${page}&search=${search || ''}`,
+    }/restaurant/menu-item?page=${page}&search=${search || ''}`,
     {
       method: 'GET',
     },
@@ -23,12 +22,12 @@ export async function GET(request: NextRequest) {
   return new Response(JSON.stringify(data), { status: response.status })
 }
 
-export async function POST(request: NextRequest) {
-  try {
-    const body = await request.json()
+export async function POST(request: Request) {
+  const body = await request.json()
 
+  try {
     const response = await authenticatedFetch(
-      `${process.env.NEXT_PUBLIC_BASE_API_URL}/restaurant/members`,
+      'http://localhost:3333/restaurant/menu-item',
       {
         method: 'POST',
         headers: {
@@ -38,27 +37,16 @@ export async function POST(request: NextRequest) {
       },
     )
 
+    console.log('meu response', response)
+
     if (!response.ok) {
-      const errorData = await response.json()
-
-      return NextResponse.json(
-        { error: errorData.message || 'Erro ao atualizar membro' },
-        { status: response.status },
-      )
+      throw new Error('Erro ao criar o produto no backend')
     }
 
-    return new NextResponse(null, { status: 201 })
+    return NextResponse.json({ message: 'Produto criado com sucesso!' })
   } catch (error) {
-    console.log('Erro no Route Handler:', error)
-
-    if (error instanceof ZodError) {
-      return NextResponse.json(
-        { error: 'Erro ao criar membro' },
-        { status: 404 },
-      )
-    }
     return NextResponse.json(
-      { error: 'Erro interno no servidor' },
+      { error: 'Erro ao criar o produto' },
       { status: 500 },
     )
   }

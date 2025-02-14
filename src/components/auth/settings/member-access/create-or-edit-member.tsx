@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { ReactNode, useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import {
   Form,
@@ -28,12 +28,12 @@ import {
 } from '@/components/ui/sheet'
 import { Switch } from '@/components/ui/switch'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { UserPen } from 'lucide-react'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { Skeleton } from '@/components/ui/skeleton'
 import { toast } from 'sonner'
+import { UserPen, UserRoundPlus } from 'lucide-react'
 
 interface Member {
   email: string
@@ -51,7 +51,9 @@ interface Roles {
   name: string
 }
 
-const fetchMember = async (memberId: string): Promise<Member> => {
+const fetchMember = async (memberId?: string): Promise<Member | undefined> => {
+  if (!memberId) return
+
   const response = await fetch(`/api/member/${memberId}`)
 
   if (!response.ok) {
@@ -73,38 +75,76 @@ const fetchRoles = async (): Promise<Roles[]> => {
   return data
 }
 
-const editMemberFormSchema = z.object({
-  name: z.string().nonempty({ message: 'Campo obrigatório' }),
-  email: z.string().email({ message: 'Necessário um e-mail válido' }),
-  currentPassword: z.string().optional(),
-  newPassword: z.string().optional(),
-  roleId: z.string().uuid({ message: 'Selecione um cargo válido' }),
-})
+const createOrEditMemberFormSchema = z
+  .object({
+    name: z.string().nonempty({ message: 'Campo obrigatório' }),
+    email: z.string().email({ message: 'Necessário um e-mail válido' }),
+    currentPassword: z.string().optional(),
+    newPassword: z.string().optional(),
+    confirmPassword: z.string().optional(),
+    roleId: z.string().uuid({ message: 'Selecione um cargo válido' }),
+  })
+  .refine(
+    (data) => {
+      if (!data.currentPassword && !data.newPassword) return true
+      return data.newPassword === data.confirmPassword
+    },
+    {
+      message: 'As senhas não coincidem',
+      path: ['confirmPassword'],
+    },
+  )
 
-type EditMemberFormType = z.infer<typeof editMemberFormSchema>
+type CreateOrEditMemberFormType = z.infer<typeof createOrEditMemberFormSchema>
 
-interface EditMemberProps {
-  memberId: string
+interface CreateOrEditMembeProps {
+  memberId?: string
+  children: ReactNode
 }
 
-export function EditMember({ memberId }: EditMemberProps) {
+export function CreateOrEditMember({
+  memberId,
+  children,
+}: CreateOrEditMembeProps) {
   const [isSheetOpen, setIsSheetOpen] = useState<boolean>(false)
   const [isPasswordChangeEnabled, setIsPasswordChangeEnabled] = useState(false)
 
-  const { data: member } = useQuery({
+  const { data: member, isLoading: isMemberLoading } = useQuery({
     queryKey: ['member', memberId],
     queryFn: () => fetchMember(memberId),
     enabled: isSheetOpen && !!memberId,
   })
 
-  const { data: roles } = useQuery({
+  const { data: roles, isLoading: isRolesLoading } = useQuery({
     queryKey: ['roles'],
     queryFn: fetchRoles,
-    enabled: isSheetOpen && !!memberId,
+    enabled: isSheetOpen,
+  })
+
+  const { mutateAsync: createMember } = useMutation({
+    mutationFn: async (data: CreateOrEditMemberFormType) => {
+      const response = await fetch(`/api/members`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      })
+
+      if (!response.ok) {
+        return toast.error('Erro ao cadastrar membro')
+      }
+
+      toast.success('Membro cadastrado com sucesso')
+
+      return
+    },
+
+    onSuccess: () => setIsSheetOpen(false),
   })
 
   const { mutateAsync: editMember } = useMutation({
-    mutationFn: async (data: EditMemberFormType) => {
+    mutationFn: async (data: CreateOrEditMemberFormType) => {
       const response = await fetch(`/api/member/${memberId}`, {
         method: 'PATCH',
         headers: {
@@ -125,13 +165,14 @@ export function EditMember({ memberId }: EditMemberProps) {
     onSuccess: () => setIsSheetOpen(false),
   })
 
-  const form = useForm<EditMemberFormType>({
-    resolver: zodResolver(editMemberFormSchema),
+  const form = useForm<CreateOrEditMemberFormType>({
+    resolver: zodResolver(createOrEditMemberFormSchema),
     defaultValues: {
       name: '',
       email: '',
       currentPassword: '',
       newPassword: '',
+      confirmPassword: '',
       roleId: '',
     },
   })
@@ -145,25 +186,53 @@ export function EditMember({ memberId }: EditMemberProps) {
         email: member.email,
         currentPassword: '',
         newPassword: '',
+        confirmPassword: '',
         roleId: member.role.id,
       })
     }
-  }, [member, roles, reset])
+    if (!isSheetOpen) {
+      reset()
+    }
+  }, [member, roles, reset, isSheetOpen])
 
-  async function onSubmit(data: EditMemberFormType) {
-    await editMember(data)
+  async function onSubmit(data: CreateOrEditMemberFormType) {
+    if (memberId) {
+      await editMember(data)
+    } else {
+      const { name, email, roleId, currentPassword: password } = data
+
+      const formatedData = {
+        name,
+        email,
+        password,
+        roleId,
+      }
+
+      await createMember(formatedData)
+    }
   }
+
+  const isEditMode = !!memberId
+  const isLoading = isEditMode ? isMemberLoading || isRolesLoading : false
 
   return (
     <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
       <SheetTrigger className="flex items-center justify-center" asChild>
-        <Button variant={'outline'} className="size-9">
-          <UserPen className="size-4" />
-        </Button>
+        {children}
       </SheetTrigger>
       <SheetContent className="w-[400px] sm:w-[540px]">
         <SheetHeader className="mb-6">
-          <SheetTitle className="text-2xl font-bold">Editar Usuário</SheetTitle>
+          {memberId ? (
+            <SheetTitle className="flex items-center gap-2 text-2xl font-bold">
+              <UserPen className="size-6" />
+              Editar Usuário
+            </SheetTitle>
+          ) : (
+            <SheetTitle className="flex items-center gap-2 text-2xl font-bold">
+              <UserRoundPlus className="size-6" />
+              Novo Usuário
+            </SheetTitle>
+          )}
           <SheetDescription className="text-sm text-muted-foreground">
             Após o salvamento do formulário a ação não poderá ser desfeita.
           </SheetDescription>
@@ -172,10 +241,12 @@ export function EditMember({ memberId }: EditMemberProps) {
         <Form {...form}>
           <form
             onSubmit={handleSubmit(onSubmit)}
-            className={`${member && roles ? 'space-y-6' : 'space-y-14'}`}
+            className={`${isLoading ? 'space-y-14' : 'space-y-6'}`}
           >
             {/* Campo Nome */}
-            {member && roles ? (
+            {isLoading && isEditMode ? (
+              <Skeleton className="h-9 w-full" />
+            ) : (
               <FormField
                 control={control}
                 name="name"
@@ -193,12 +264,12 @@ export function EditMember({ memberId }: EditMemberProps) {
                   </FormItem>
                 )}
               />
-            ) : (
-              <Skeleton className="mt-14 h-9 w-full" />
             )}
 
             {/* Campo Email */}
-            {member && roles ? (
+            {isLoading && isEditMode ? (
+              <Skeleton className="h-9 w-full" />
+            ) : (
               <FormField
                 control={control}
                 name="email"
@@ -216,12 +287,12 @@ export function EditMember({ memberId }: EditMemberProps) {
                   </FormItem>
                 )}
               />
-            ) : (
-              <Skeleton className="mt-28 h-9 w-full" />
             )}
 
             {/* Campo Cargo */}
-            {member && roles ? (
+            {isLoading && isEditMode ? (
+              <Skeleton className="h-9 w-full" />
+            ) : (
               <FormField
                 control={control}
                 name="roleId"
@@ -239,7 +310,7 @@ export function EditMember({ memberId }: EditMemberProps) {
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent className="rounded-lg border border-gray-300">
-                        {roles.map((role) => (
+                        {roles?.map((role) => (
                           <SelectItem key={role.id} value={role.id}>
                             {role.name}
                           </SelectItem>
@@ -250,45 +321,52 @@ export function EditMember({ memberId }: EditMemberProps) {
                   </FormItem>
                 )}
               />
-            ) : (
-              <Skeleton className="h-9 w-full" />
             )}
 
-            {/* Switch para ativar/desativar a mudança de senha */}
-            {member && roles ? (
-              <FormItem className="flex items-center justify-between rounded-lg border border-gray-300 p-4">
-                <div className="space-y-0.5">
-                  <FormLabel className="text-sm font-medium">
-                    Alterar senha?
-                  </FormLabel>
-                </div>
-                <FormControl>
-                  <Switch
-                    checked={isPasswordChangeEnabled}
-                    onCheckedChange={setIsPasswordChangeEnabled}
-                    className="data-[state=checked]:bg-primary"
-                  />
-                </FormControl>
-              </FormItem>
-            ) : (
-              <Skeleton className="h-9 w-full" />
+            {/* Switch para ativar/desativar a mudança de senha (apenas no modo de edição) */}
+            {isEditMode && (
+              <>
+                {isLoading ? (
+                  <Skeleton className="h-9 w-full" />
+                ) : (
+                  <FormItem className="flex items-center justify-between rounded-lg border border-gray-300 p-4">
+                    <div className="space-y-0.5">
+                      <FormLabel className="text-sm font-medium">
+                        Alterar senha?
+                      </FormLabel>
+                    </div>
+                    <FormControl>
+                      <Switch
+                        checked={isPasswordChangeEnabled}
+                        onCheckedChange={setIsPasswordChangeEnabled}
+                        className="data-[state=checked]:bg-primary"
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              </>
             )}
 
             {/* Campos de senha (condicionais) */}
-            {isPasswordChangeEnabled && (
+            {(isPasswordChangeEnabled || !isEditMode) && (
               <div className="space-y-4">
+                {/* Campo Senha (apenas no modo de criação ou se o switch estiver ativado) */}
                 <FormField
                   control={control}
-                  name="currentPassword"
+                  name="newPassword"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel className="text-sm font-medium">
-                        Senha Atual
+                        {isEditMode ? 'Nova Senha' : 'Senha'}
                       </FormLabel>
                       <FormControl>
                         <Input
                           type="password"
-                          placeholder="Digite sua senha atual"
+                          placeholder={
+                            isEditMode
+                              ? 'Digite sua nova senha'
+                              : 'Digite sua senha'
+                          }
                           {...field}
                           className="w-full rounded-lg border border-gray-300 p-2"
                         />
@@ -298,18 +376,25 @@ export function EditMember({ memberId }: EditMemberProps) {
                   )}
                 />
 
+                {/* Campo Confirmar Senha (apenas no modo de criação ou se o switch estiver ativado) */}
                 <FormField
                   control={control}
-                  name="newPassword"
+                  name="confirmPassword"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel className="text-sm font-medium">
-                        Nova Senha
+                        {isEditMode
+                          ? 'Confirmar Nova Senha'
+                          : 'Confirmar Senha'}
                       </FormLabel>
                       <FormControl>
                         <Input
                           type="password"
-                          placeholder="Digite sua nova senha"
+                          placeholder={
+                            isEditMode
+                              ? 'Confirme sua nova senha'
+                              : 'Confirme sua senha'
+                          }
                           {...field}
                           className="w-full rounded-lg border border-gray-300 p-2"
                         />
@@ -322,7 +407,7 @@ export function EditMember({ memberId }: EditMemberProps) {
             )}
 
             {/* Botão de submit */}
-            {member && roles && (
+            {!isLoading && (
               <div className="flex justify-end">
                 <Button
                   type="submit"

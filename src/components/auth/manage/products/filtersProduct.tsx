@@ -20,6 +20,7 @@ import {
   Soup,
   X,
 } from 'lucide-react'
+import { CreateOrEditProduct } from './create-or-edit-product'
 
 export function FilterProducts() {
   const status = [
@@ -84,10 +85,12 @@ export function FilterProducts() {
       </div>
 
       <div>
-        <Button>
-          <Plus />
-          Criar Produto
-        </Button>
+        <CreateOrEditProduct>
+          <Button>
+            <Plus />
+            Criar Produto
+          </Button>
+        </CreateOrEditProduct>
       </div>
     </div>
   )

@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { ReactNode, useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import {
   Form,
@@ -20,48 +20,31 @@ import {
   SheetTrigger,
 } from '@/components/ui/sheet'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { UserPen } from 'lucide-react'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
-import { useMutation, useQuery } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Skeleton } from '@/components/ui/skeleton'
 import { toast } from 'sonner'
 
-interface Member {
-  email: string
-  id: string
-  isActive: boolean
-  name: string
-  role: {
-    id: string
-    name: string
-  }
-}
-
-interface Roles {
-  id: string
+interface Category {
+  categoryId: string
   name: string
 }
 
-const fetchMember = async (memberId: string): Promise<Member> => {
-  const response = await fetch(`/api/member/${memberId}`)
+const fetchCategory = async (
+  categoryId?: string,
+): Promise<Category | undefined> => {
+  if (!categoryId) return
+
+  const response = await fetch(`/api/categories/${categoryId}`, {
+    method: 'GET',
+  })
 
   if (!response.ok) {
     throw new Error('Erro ao buscar membro')
   }
 
-  const data: Member = await response.json()
-  return data
-}
-
-const fetchRoles = async (): Promise<Roles[]> => {
-  const response = await fetch(`/api/roles`)
-
-  if (!response.ok) {
-    throw new Error('Erro ao buscar cargos')
-  }
-
-  const data: Roles[] = await response.json()
+  const data: Category = await response.json()
   return data
 }
 
@@ -72,27 +55,53 @@ const editCategoryFormSchema = z.object({
 type EditCategoryFormType = z.infer<typeof editCategoryFormSchema>
 
 interface EditCategoryProps {
-  memberId: string
+  categoryId?: string
+  children: ReactNode
 }
 
-export function EditCategory({ memberId }: EditCategoryProps) {
+export function CreateOrEditCategory({
+  categoryId,
+  children,
+}: EditCategoryProps) {
+  const queryClient = useQueryClient()
+
   const [isSheetOpen, setIsSheetOpen] = useState<boolean>(false)
 
-  const { data: member } = useQuery({
-    queryKey: ['member', memberId],
-    queryFn: () => fetchMember(memberId),
-    enabled: isSheetOpen && !!memberId,
+  const { data: category, isLoading: isCategoryLoading } = useQuery({
+    queryKey: ['category', categoryId],
+    queryFn: () => fetchCategory(categoryId),
+    enabled: isSheetOpen && !!categoryId,
   })
 
-  const { data: roles } = useQuery({
-    queryKey: ['roles'],
-    queryFn: fetchRoles,
-    enabled: isSheetOpen && !!memberId,
+  const { mutateAsync: createCategory } = useMutation({
+    mutationFn: async (data: EditCategoryFormType) => {
+      const response = await fetch(`/api/categories`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      })
+
+      if (!response.ok) {
+        return toast.error('Erro ao criar categoria')
+      }
+
+      toast.success('Categoria criada com sucesso')
+
+      queryClient.invalidateQueries({
+        queryKey: ['categories'],
+      })
+
+      return
+    },
+
+    onSuccess: () => setIsSheetOpen(false),
   })
 
   const { mutateAsync: editCategory } = useMutation({
     mutationFn: async (data: EditCategoryFormType) => {
-      const response = await fetch(`/api/member/${memberId}`, {
+      const response = await fetch(`/api/categories/${categoryId}`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -101,10 +110,14 @@ export function EditCategory({ memberId }: EditCategoryProps) {
       })
 
       if (!response.ok) {
-        return toast.error('Erro ao editar membro')
+        return toast.error('Erro ao editar categoria')
       }
 
-      toast.success('Membro editado com sucesso')
+      toast.success('Categoria editada com sucesso')
+
+      queryClient.invalidateQueries({
+        queryKey: ['categories'],
+      })
 
       return
     },
@@ -122,29 +135,40 @@ export function EditCategory({ memberId }: EditCategoryProps) {
   const { handleSubmit, control, reset } = form
 
   useEffect(() => {
-    if (member && roles) {
+    if (category) {
       reset({
-        name: member.name,
+        name: category.name,
       })
     }
-  }, [member, roles, reset])
+  }, [category, reset])
 
   async function onSubmit(data: EditCategoryFormType) {
-    await editCategory(data)
+    if (categoryId) {
+      await editCategory(data)
+    } else {
+      await createCategory(data)
+    }
   }
+
+  const isEditMode = !!categoryId
+  const isLoading = isEditMode ? isCategoryLoading : false
 
   return (
     <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
       <SheetTrigger className="flex items-center justify-center" asChild>
-        <Button variant={'outline'} className="size-9">
-          <UserPen className="size-4" />
-        </Button>
+        {children}
       </SheetTrigger>
       <SheetContent className="w-[400px] sm:w-[540px]">
         <SheetHeader className="mb-6">
-          <SheetTitle className="text-2xl font-bold">
-            Editar Categoria
-          </SheetTitle>
+          {categoryId ? (
+            <SheetTitle className="text-2xl font-bold">
+              Editar Categoria
+            </SheetTitle>
+          ) : (
+            <SheetTitle className="text-2xl font-bold">
+              Criar Categoria
+            </SheetTitle>
+          )}
           <SheetDescription className="text-sm text-muted-foreground">
             Após o salvamento do formulário a ação não poderá ser desfeita.
           </SheetDescription>
@@ -153,33 +177,12 @@ export function EditCategory({ memberId }: EditCategoryProps) {
         <Form {...form}>
           <form
             onSubmit={handleSubmit(onSubmit)}
-            className={`${member && roles ? 'space-y-6' : 'space-y-14'}`}
+            className={`${isLoading ? 'space-y-14' : 'space-y-6'}`}
           >
             {/* Campo Nome */}
-            {member && roles ? (
-              <FormField
-                control={control}
-                name="name"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-sm font-medium">Nome</FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder="Nome do Usuário"
-                        {...field}
-                        className="w-full rounded-lg border border-gray-300 p-2"
-                      />
-                    </FormControl>
-                    <FormMessage className="text-xs text-red-500" />
-                  </FormItem>
-                )}
-              />
-            ) : (
+            {isLoading && isEditMode ? (
               <Skeleton className="mt-14 h-9 w-full" />
-            )}
-
-            {/* Campo Email */}
-            {member && roles ? (
+            ) : (
               <FormField
                 control={control}
                 name="name"
@@ -188,7 +191,7 @@ export function EditCategory({ memberId }: EditCategoryProps) {
                     <FormLabel className="text-sm font-medium">Nome</FormLabel>
                     <FormControl>
                       <Input
-                        placeholder="Pizzas"
+                        placeholder="Nome da Categoria"
                         {...field}
                         className="w-full rounded-lg border border-gray-300 p-2"
                       />
@@ -197,12 +200,10 @@ export function EditCategory({ memberId }: EditCategoryProps) {
                   </FormItem>
                 )}
               />
-            ) : (
-              <Skeleton className="mt-28 h-9 w-full" />
             )}
 
             {/* Botão de submit */}
-            {member && roles && (
+            {!isLoading && (
               <div className="flex justify-end">
                 <Button
                   type="submit"

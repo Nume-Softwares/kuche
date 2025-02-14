@@ -1,3 +1,5 @@
+'use client'
+
 import Image from 'next/image'
 
 import { AspectRatio } from '@/components/ui/aspect-ratio'
@@ -13,30 +15,113 @@ import {
 } from '@/components/ui/card'
 
 import { FilterProducts } from './filtersProduct'
-import {
-  Carousel,
-  CarouselContent,
-  CarouselItem,
-} from '@/components/ui/carousel'
-import { Badge } from '@/components/ui/badge'
-import { products } from '../../../../../data/products'
-import { Settings, SquareChartGantt, Trash2 } from 'lucide-react'
 
+import { Badge } from '@/components/ui/badge'
+import { Pencil, SquareChartGantt } from 'lucide-react'
+import { formmatedPrice } from '@/utils/formattedPrice'
+import { useRouter, useSearchParams } from 'next/navigation'
+import { useEffect, useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
+import { CreateOrEditProduct } from './create-or-edit-product'
+import { DialogProducts } from './dialog-products'
+import { DialogDetailsProduct } from './dialog-details-product-id'
+
+export interface MenuItems {
+  menuItems: {
+    id: string
+    name: string
+    description: string
+    imageUrl: string
+    isActive: boolean
+    price: number
+    categoryId: string
+    options: {
+      id: string
+      name: string
+      price: number
+    }[]
+  }[]
+  totalPages: number
+}
 export function Products() {
-  function formatToBRL(number: number) {
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL',
-    }).format(number)
-  }
+  const router = useRouter()
+  const searchParams = useSearchParams()
+  const [currentPage, setCurrentPage] = useState<number>(1)
+  const [searchTerm, setSearchTerm] = useState<string | null>('')
+
+  useEffect(() => {
+    const page = searchParams.get('page')
+    const search = searchParams.get('search')
+
+    if (!page) {
+      router.replace(
+        `/manage/products?page=${currentPage}&search=${searchTerm}`,
+      )
+    } else {
+      setCurrentPage(Number(page))
+    }
+
+    if (search) {
+      setSearchTerm(search)
+    }
+  }, [searchParams, router])
+
+  useEffect(() => {
+    router.push(`/manage/products?page=${currentPage}`)
+  }, [currentPage, router])
+
+  const { data: getComplements } = useQuery({
+    queryKey: ['products', { currentPage, searchTerm }],
+    queryFn: () =>
+      fetch(`/api/products?page=${currentPage}&search=${searchTerm}`)
+        .then((res) => res.json())
+        .then((data: MenuItems) => data),
+    refetchOnWindowFocus: false,
+  })
+
+  useEffect(() => {
+    const page = searchParams.get('page')
+
+    if (!page) return
+    if (!getComplements) return
+
+    if (Number(page) > getComplements?.totalPages) {
+      router.replace(`/manage/complements?page=${getComplements?.totalPages}`)
+    }
+  }, [getComplements])
+
+  // const handlePageChange = (page: number) => {
+  //   if (page > 0 && page <= (getComplements?.totalPages || 1)) {
+  //     setCurrentPage(page)
+  //   }
+  // }
+
+  // const handlePreviousPage = () => {
+  //   if (currentPage > 1) {
+  //     setCurrentPage(currentPage - 1)
+  //   }
+  // }
+
+  // const handleNextPage = () => {
+  //   if (currentPage < (getComplements?.totalPages || 1)) {
+  //     setCurrentPage(currentPage + 1)
+  //   }
+  // }
+
+  // const totalPages = getComplements?.totalPages ?? 1
+
+  // function changeSearchTerm(term: string) {
+  //   setSearchTerm(term)
+  //   setCurrentPage(1)
+  // }
 
   return (
     <section className="flex flex-col gap-4">
       <FilterProducts />
 
       <div className="flex flex-wrap gap-6">
-        {products.map((product, index) => (
-          <Card key={index} className="w-[350px]">
+        {getComplements?.menuItems.map((product) => (
+          <Card key={product.id} className="w-[350px]">
             <CardHeader>
               <CardTitle className="flex justify-between">
                 {product.name}
@@ -56,7 +141,7 @@ export function Products() {
               <div className="mx-auto w-[300px]">
                 <AspectRatio ratio={16 / 9} className="rounded-md bg-muted">
                   <Image
-                    src={product.image}
+                    src={product.imageUrl}
                     alt={product.name}
                     fill
                     className="rounded-md object-cover"
@@ -64,7 +149,7 @@ export function Products() {
                 </AspectRatio>
               </div>
 
-              <div className="mt-4">
+              {/* <div className="mt-4">
                 <Carousel
                   opts={{
                     align: 'start',
@@ -86,25 +171,30 @@ export function Products() {
                     ))}
                   </CarouselContent>
                 </Carousel>
-              </div>
+              </div> */}
 
               <div className="mt-2 text-xl font-semibold">
-                {formatToBRL(product.price)}
+                {formmatedPrice(product.price)}
               </div>
             </CardContent>
 
             <CardFooter className="flex justify-between pt-2">
-              <Button variant="outline">
-                <SquareChartGantt />
-                Detalhes
-              </Button>
+              <DialogDetailsProduct product={product}>
+                <Button variant="outline">
+                  <SquareChartGantt />
+                  Detalhes
+                </Button>
+              </DialogDetailsProduct>
               <div className="flex gap-2">
-                <Button variant={'secondary'}>
-                  <Settings />
-                </Button>
-                <Button variant={'destructive'}>
-                  <Trash2 />
-                </Button>
+                <CreateOrEditProduct product={product}>
+                  <Button variant={'secondary'} className="size-9">
+                    <Pencil />
+                  </Button>
+                </CreateOrEditProduct>
+
+                <DialogProducts trigger="STATUS" product={product} />
+
+                <DialogProducts trigger="DELETE" product={product} />
               </div>
             </CardFooter>
           </Card>

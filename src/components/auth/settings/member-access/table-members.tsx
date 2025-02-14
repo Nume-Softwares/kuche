@@ -20,7 +20,6 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from '@/components/ui/pagination'
-import { EditMember } from './edit-member'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { DialogMember } from './dialog-member'
 import {
@@ -28,6 +27,9 @@ import {
   HoverCardContent,
   HoverCardTrigger,
 } from '@/components/ui/hover-card'
+import { Button } from '@/components/ui/button'
+import { UserPen, UserPlus } from 'lucide-react'
+import { CreateOrEditMember } from './create-or-edit-member'
 
 export interface Member {
   members: {
@@ -125,10 +127,18 @@ export function TableMembers() {
   return (
     <div className="flex h-full flex-col gap-4">
       <div className="h-full space-y-2.5">
-        <TableFilters
-          changeSearchTerm={changeSearchTerm}
-          searchTerm={searchTerm}
-        />
+        <div className="flex justify-between">
+          <CreateOrEditMember>
+            <Button>
+              <UserPlus className="size-4" />
+              Criar Usuário
+            </Button>
+          </CreateOrEditMember>
+          <TableFilters
+            changeSearchTerm={changeSearchTerm}
+            searchTerm={searchTerm}
+          />
+        </div>
 
         <div className="flex h-full flex-col justify-between rounded-md border pb-4">
           <Table>
@@ -145,45 +155,62 @@ export function TableMembers() {
             </TableHeader>
 
             <TableBody>
-              {getMembers &&
-                getMembers.members.map((member) => (
-                  <TableRow key={member.id}>
-                    <TableCell className="max-w-[180px] truncate">
-                      {member.id}
-                    </TableCell>
-                    <TableCell>{member.name}</TableCell>
-                    <TableCell>{member.role.name}</TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-1">
-                        <div
-                          className={`size-2 rounded-full ${statusColor(
-                            member.isActive,
-                          )}`}
-                        />
-                        {member.isActive ? 'Ativo' : 'Inativo'}
-                      </div>
-                    </TableCell>
+              {getMembers ? (
+                getMembers.totalPages > 0 ? (
+                  getMembers.members.map((member) => (
+                    <TableRow key={member.id}>
+                      <TableCell className="max-w-[180px] truncate">
+                        {member.id}
+                      </TableCell>
+                      <TableCell>{member.name}</TableCell>
+                      <TableCell>{member.role.name}</TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-1">
+                          <div
+                            className={`size-2 rounded-full ${statusColor(
+                              member.isActive,
+                            )}`}
+                          />
+                          {member.isActive ? 'Ativo' : 'Inativo'}
+                        </div>
+                      </TableCell>
 
-                    <TableCell className="px-1">
-                      <EditMember memberId={member.id} />
-                    </TableCell>
-                    <TableCell className="px-1">
-                      <HoverCard>
-                        <HoverCardTrigger>
-                          <DialogMember member={member} trigger="STATUS" />
-                        </HoverCardTrigger>
-                        <HoverCardContent className="w-full">
-                          {member.isActive
-                            ? 'Desativar Usuário'
-                            : 'Ativar Usuário'}
-                        </HoverCardContent>
-                      </HoverCard>
-                    </TableCell>
-                    <TableCell className="pl-1 pr-2">
-                      <DialogMember member={member} trigger="DELETE" />
+                      <TableCell className="px-1">
+                        <CreateOrEditMember memberId={member.id}>
+                          <Button variant={'outline'} className="size-9">
+                            <UserPen className="size-4" />
+                          </Button>
+                        </CreateOrEditMember>
+                      </TableCell>
+                      <TableCell className="px-1">
+                        <HoverCard>
+                          <HoverCardTrigger>
+                            <DialogMember member={member} trigger="STATUS" />
+                          </HoverCardTrigger>
+                          <HoverCardContent className="w-full">
+                            {member.isActive
+                              ? 'Desativar Usuário'
+                              : 'Ativar Usuário'}
+                          </HoverCardContent>
+                        </HoverCard>
+                      </TableCell>
+                      <TableCell className="pl-1 pr-2">
+                        <DialogMember member={member} trigger="DELETE" />
+                      </TableCell>
+                    </TableRow>
+                  ))
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={7}>
+                      Nenhum usuário encontrado.
                     </TableCell>
                   </TableRow>
-                ))}
+                )
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={7}>Carregando...</TableCell>
+                </TableRow>
+              )}
             </TableBody>
           </Table>
 

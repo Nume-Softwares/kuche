@@ -10,7 +10,7 @@ interface TableFiltersProps {
   changeSearchTerm: (term: string) => void
 }
 
-export function TableFilters({
+export function TableFiltersCategories({
   searchTerm,
   changeSearchTerm,
 }: TableFiltersProps) {

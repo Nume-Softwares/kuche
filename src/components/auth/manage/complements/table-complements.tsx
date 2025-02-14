@@ -20,23 +20,24 @@ import {
 import { useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useQuery } from '@tanstack/react-query'
-import { DialogCategory } from './dialog-category'
-import { CreateOrEditCategory } from './create-or-edit-category'
 import { Button } from '@/components/ui/button'
 import { Pencil, Plus } from 'lucide-react'
-import { TableFiltersCategories } from './table-filters-categories'
+import { TableFiltersComplements } from './table-filters-complements'
+import { CreateOrEditComplement } from './create-or-edit-complement'
+import { formmatedPrice } from '@/utils/formattedPrice'
+import { DialogComplements } from './dialog-complements'
 
-export interface Categories {
-  categories: {
+export interface Complements {
+  complements: {
     id: string
     name: string
+    price: number
     isActive: boolean
-    totalMenuItems: number
   }[]
   totalPages: number
 }
 
-export function TableCategory() {
+export function TableComplements() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [currentPage, setCurrentPage] = useState<number>(1)
@@ -48,7 +49,7 @@ export function TableCategory() {
 
     if (!page) {
       router.replace(
-        `/manage/category?page=${currentPage}&search=${searchTerm}`,
+        `/manage/complements?page=${currentPage}&search=${searchTerm}`,
       )
     } else {
       setCurrentPage(Number(page))
@@ -60,30 +61,30 @@ export function TableCategory() {
   }, [searchParams, router])
 
   useEffect(() => {
-    router.push(`/manage/category?page=${currentPage}`)
+    router.push(`/manage/complements?page=${currentPage}`)
   }, [currentPage, router])
 
-  const { data: getCategories } = useQuery({
-    queryKey: ['categories', { currentPage, searchTerm }],
+  const { data: getComplements } = useQuery({
+    queryKey: ['complements', { currentPage, searchTerm }],
     queryFn: () =>
-      fetch(`/api/categories?page=${currentPage}&search=${searchTerm}`)
+      fetch(`/api/complements?page=${currentPage}&search=${searchTerm}`)
         .then((res) => res.json())
-        .then((data: Categories) => data),
+        .then((data: Complements) => data),
   })
 
   useEffect(() => {
     const page = searchParams.get('page')
 
     if (!page) return
-    if (!getCategories) return
+    if (!getComplements) return
 
-    if (Number(page) > getCategories?.totalPages) {
-      router.replace(`/manage/category?page=${getCategories?.totalPages}`)
+    if (Number(page) > getComplements?.totalPages) {
+      router.replace(`/manage/complements?page=${getComplements?.totalPages}`)
     }
-  }, [getCategories])
+  }, [getComplements])
 
   const handlePageChange = (page: number) => {
-    if (page > 0 && page <= (getCategories?.totalPages || 1)) {
+    if (page > 0 && page <= (getComplements?.totalPages || 1)) {
       setCurrentPage(page)
     }
   }
@@ -95,12 +96,12 @@ export function TableCategory() {
   }
 
   const handleNextPage = () => {
-    if (currentPage < (getCategories?.totalPages || 1)) {
+    if (currentPage < (getComplements?.totalPages || 1)) {
       setCurrentPage(currentPage + 1)
     }
   }
 
-  const totalPages = getCategories?.totalPages ?? 1
+  const totalPages = getComplements?.totalPages ?? 1
 
   function statusColor(status: boolean) {
     if (status) {
@@ -119,13 +120,13 @@ export function TableCategory() {
     <div className="flex flex-col gap-4">
       <div className="space-y-2.5">
         <div className="flex justify-between">
-          <CreateOrEditCategory>
+          <CreateOrEditComplement>
             <Button>
               <Plus className="size-4" />
-              Criar Categoria
+              Criar Complemento
             </Button>
-          </CreateOrEditCategory>
-          <TableFiltersCategories
+          </CreateOrEditComplement>
+          <TableFiltersComplements
             changeSearchTerm={changeSearchTerm}
             searchTerm={searchTerm}
           />
@@ -137,8 +138,8 @@ export function TableCategory() {
               <TableRow>
                 <TableHead className="w-[180px]">Identificador</TableHead>
                 <TableHead>Nome</TableHead>
-                <TableHead className="w-[120px]">Qntd</TableHead>
                 <TableHead className="w-[80px]">Status</TableHead>
+                <TableHead className="w-[80px]">Preço</TableHead>
                 <TableHead className="w-[44px] text-center" />
                 <TableHead className="w-[44px] text-center" />
                 <TableHead className="w-[44px] text-center" />
@@ -146,44 +147,50 @@ export function TableCategory() {
             </TableHeader>
 
             <TableBody>
-              {getCategories ? (
-                getCategories.totalPages > 0 ? (
-                  getCategories.categories.map((category) => (
-                    <TableRow key={category.id}>
+              {getComplements ? (
+                getComplements.totalPages > 0 ? (
+                  getComplements.complements.map((complement) => (
+                    <TableRow key={complement.id}>
                       <TableCell className="max-w-[180px] truncate">
-                        {category.id}
+                        {complement.id}
                       </TableCell>
-                      <TableCell>{category.name}</TableCell>
-                      <TableCell>{category.totalMenuItems}</TableCell>
+                      <TableCell>{complement.name}</TableCell>
+                      <TableCell>{formmatedPrice(complement.price)}</TableCell>
                       <TableCell>
                         <div className="flex items-center gap-1">
                           <div
                             className={`size-2 rounded-full ${statusColor(
-                              category.isActive,
+                              complement.isActive,
                             )}`}
                           />
-                          {category.isActive ? 'Ativo' : 'Inativo'}
+                          {complement.isActive ? 'Ativo' : 'Inativo'}
                         </div>
                       </TableCell>
                       <TableCell className="px-1">
-                        <CreateOrEditCategory categoryId={category.id}>
+                        <CreateOrEditComplement complementId={complement.id}>
                           <Button variant={'outline'} className="size-9">
                             <Pencil className="size-4" />
                           </Button>
-                        </CreateOrEditCategory>
+                        </CreateOrEditComplement>
                       </TableCell>
                       <TableCell className="px-1">
-                        <DialogCategory category={category} trigger="STATUS" />
+                        <DialogComplements
+                          complement={complement}
+                          trigger="STATUS"
+                        />
                       </TableCell>
                       <TableCell className="pl-1 pr-2">
-                        <DialogCategory category={category} trigger="DELETE" />
+                        <DialogComplements
+                          complement={complement}
+                          trigger="DELETE"
+                        />
                       </TableCell>
                     </TableRow>
                   ))
                 ) : (
                   <TableRow>
                     <TableCell colSpan={7}>
-                      Nenhuma categoria encontrada.
+                      Nenhum complemento encontrado.
                     </TableCell>
                   </TableRow>
                 )

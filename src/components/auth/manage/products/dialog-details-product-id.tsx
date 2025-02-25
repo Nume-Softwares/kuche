@@ -16,6 +16,24 @@ import { Separator } from '@/components/ui/separator'
 import { ReactNode, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 
+interface Product {
+  id: string
+  name: string
+  description: string
+  imageUrl: string
+  isActive: boolean
+  price: number
+  category: {
+    id: string
+    name: string
+  }
+  options: {
+    id: string
+    name: string
+    price: number
+  }[]
+}
+
 interface DialogDetailsProductProps {
   product: {
     id: string
@@ -24,11 +42,8 @@ interface DialogDetailsProductProps {
     imageUrl: string
     isActive: boolean
     price: number
-    category?: {
-      id: string
-      name: string
-    }
-    options?: {
+    categoryId: string
+    options: {
       id: string
       name: string
       price: number
@@ -44,11 +59,11 @@ export function DialogDetailsProduct({
   const [isDialogDetailsOpen, setIsDialogDetailsOpen] = useState<boolean>(false)
 
   const { data: getDetailsProductId } = useQuery({
-    queryKey: ['product', product.id],
+    queryKey: ['product', product],
     queryFn: () =>
-      fetch(`/api/products/${product.id}`)
+      fetch(`/api/products/${product}`)
         .then((res) => res.json())
-        .then((data) => data),
+        .then((data: Product) => data),
     enabled: !!product && isDialogDetailsOpen,
   })
 
@@ -56,30 +71,40 @@ export function DialogDetailsProduct({
 
   return (
     <Dialog open={isDialogDetailsOpen} onOpenChange={setIsDialogDetailsOpen}>
-      <DialogTrigger>{children}</DialogTrigger>
+      <DialogTrigger asChild>{children}</DialogTrigger>
 
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>{product.name}</DialogTitle>
+          <DialogTitle>
+            {getDetailsProductId && getDetailsProductId.name}
+          </DialogTitle>
           <DialogDescription>Detalhes do produto</DialogDescription>
         </DialogHeader>
 
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center justify-between">
-              <span>{product.name}</span>
-              <Badge variant={product.isActive ? 'default' : 'secondary'}>
-                {product.isActive ? 'Ativo' : 'Inativo'}
+              <span>{getDetailsProductId && getDetailsProductId.name}</span>
+              <Badge
+                variant={
+                  getDetailsProductId && getDetailsProductId.isActive
+                    ? 'default'
+                    : 'secondary'
+                }
+              >
+                {getDetailsProductId && getDetailsProductId.isActive
+                  ? 'Ativo'
+                  : 'Inativo'}
               </Badge>
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             {/* Exibição da imagem do produto */}
-            {product.imageUrl && (
+            {getDetailsProductId && product.imageUrl && (
               <div className="h-48 w-full overflow-hidden rounded-lg">
                 <img
-                  src={product.imageUrl}
-                  alt={product.name}
+                  src={getDetailsProductId.imageUrl}
+                  alt={getDetailsProductId.name}
                   className="size-full object-cover"
                 />
               </div>
@@ -87,7 +112,10 @@ export function DialogDetailsProduct({
 
             <div>
               <p className="text-sm text-muted-foreground">Descrição</p>
-              <p>{product.description || 'Nenhuma descrição disponível.'}</p>
+              <p>
+                {(getDetailsProductId && getDetailsProductId.description) ||
+                  'Nenhuma descrição disponível.'}
+              </p>
             </div>
 
             <Separator />
@@ -98,7 +126,9 @@ export function DialogDetailsProduct({
                 {new Intl.NumberFormat('pt-BR', {
                   style: 'currency',
                   currency: 'BRL',
-                }).format(Number(product.price))}
+                }).format(
+                  Number(getDetailsProductId && getDetailsProductId.price),
+                )}
               </p>
             </div>
 
@@ -106,17 +136,22 @@ export function DialogDetailsProduct({
 
             <div>
               <p className="text-sm text-muted-foreground">Categoria</p>
-              <p>{product.category?.name || 'Nenhuma categoria associada.'}</p>
+              <p>
+                {(getDetailsProductId && getDetailsProductId.category?.name) ||
+                  'Nenhuma categoria associada.'}
+              </p>
             </div>
 
             <Separator />
 
             <div>
               <p className="text-sm text-muted-foreground">Complementos</p>
-              {product.options && product.options.length > 0 ? (
+              {getDetailsProductId &&
+              getDetailsProductId.options &&
+              getDetailsProductId.options.length > 0 ? (
                 <ul className="space-y-2">
-                  {product.options.map((option, key: number) => (
-                    <li key={key} className="flex items-center gap-2">
+                  {getDetailsProductId.options.map((option, key: number) => (
+                    <li key={key} className="flex items-center justify-between">
                       <span>{option.name}</span>
                       <Badge variant="outline">
                         {new Intl.NumberFormat('pt-BR', {
@@ -135,7 +170,7 @@ export function DialogDetailsProduct({
         </Card>
 
         <div className="flex justify-end">
-          <DialogClose>
+          <DialogClose asChild>
             <Button variant="outline">Fechar</Button>
           </DialogClose>
         </div>

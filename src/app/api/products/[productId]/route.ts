@@ -65,6 +65,8 @@ export async function PATCH(
       },
     )
 
+    console.log('meu resposne', response)
+
     if (!response.ok) {
       const errorData = await response.json()
 

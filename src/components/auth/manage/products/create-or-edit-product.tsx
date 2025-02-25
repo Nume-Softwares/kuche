@@ -82,7 +82,11 @@ interface CreateOrEditProductProps {
     isActive: boolean
     price: number
     categoryId: string
-    complementIds?: string[]
+    options: {
+      id: string
+      name: string
+      price: number
+    }[]
   }
 }
 
@@ -96,6 +100,10 @@ export function CreateOrEditProduct({
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [currentStep, setCurrentStep] = useState<number>(1)
   const [searchComplement, setSearchComplement] = useState<string>('')
+  const [isAnotherCreatingProduct, setIsAnotherCreatingProduct] =
+    useState<boolean>(false)
+
+  console.log('meu product', product)
 
   const { mutateAsync: editProduct } = useMutation({
     mutationFn: async (data: FormCreateOrEditProductType) => {
@@ -136,7 +144,6 @@ export function CreateOrEditProduct({
       queryClient.invalidateQueries({ queryKey: ['products'] })
       return
     },
-    onSuccess: () => setIsDialogOpen(false),
   })
 
   const { data: categoryActives } = useQuery({
@@ -172,6 +179,8 @@ export function CreateOrEditProduct({
   const { handleSubmit, control, setValue, reset, watch, trigger } = form
   const selectedComplementIds = watch('complementIds', [])
 
+  console.log('meu selected', selectedComplementIds)
+
   useEffect(() => {
     if (!isDialogOpen) {
       reset()
@@ -182,29 +191,40 @@ export function CreateOrEditProduct({
 
   useEffect(() => {
     if (product) {
+      const complementIds = product.options.map((option) => option.id)
+
       reset({
         name: product.name,
         description: product.description,
         price: product.price,
         categoryId: product.categoryId,
         imageBase64: product.imageUrl,
-        complementIds: product.complementIds || [],
+        complementIds: complementIds,
       })
       setPreviewImage(product.imageUrl)
+
+      if (complementIds.length > 0) {
+        setValue('complementIds', complementIds)
+      }
     }
-  }, [product])
-
+  }, [product, reset, setValue])
   const onSubmit = async (values: FormCreateOrEditProductType) => {
-    console.log('aquiiiiiiiii')
-
     if (currentStep !== 2) return
-
-    console.log('meu currentStep', currentStep)
 
     if (product) {
       await editProduct(values)
     } else {
-      await createProduct(values)
+      await createProduct(values).then(() => {
+        if (isAnotherCreatingProduct) {
+          setIsAnotherCreatingProduct(false)
+          reset()
+          setPreviewImage(null)
+          setCurrentStep(1)
+          return
+        }
+
+        setIsDialogOpen(false)
+      })
     }
   }
 
@@ -250,6 +270,11 @@ export function CreateOrEditProduct({
 
   const handlePreviousStep = () => {
     setCurrentStep((prev) => prev - 1)
+  }
+
+  const handleCreateAnotherProduct = async () => {
+    setIsAnotherCreatingProduct(true)
+    await handleSubmit(onSubmit)()
   }
 
   const filteredComplements = complementsActive?.filter((complement) =>
@@ -383,82 +408,85 @@ export function CreateOrEditProduct({
                   )}
                 />
 
-                <FormField
-                  control={control}
-                  name="price"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-sm font-medium">
-                        Preço
-                      </FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder="Digite o preço do produto"
-                          className="w-full rounded-lg border border-gray-300 p-2"
-                          value={field.value ? formmatedPrice(field.value) : ''}
-                          onChange={(e) => {
-                            const rawValue = e.target.value.replace(/\D/g, '')
-                            const numericValue = Number(rawValue) / 100
+                <div className="grid grid-cols-2 gap-3">
+                  <FormField
+                    control={control}
+                    name="price"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-col">
+                        <FormLabel className="text-sm font-medium">
+                          Preço
+                        </FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder="Digite o preço do produto"
+                            className="w-full rounded-lg border border-gray-300 p-2"
+                            value={
+                              field.value ? formmatedPrice(field.value) : ''
+                            }
+                            onChange={(e) => {
+                              const rawValue = e.target.value.replace(/\D/g, '')
+                              const numericValue = Number(rawValue) / 100
 
-                            field.onChange(numericValue)
-                          }}
-                        />
-                      </FormControl>
-                      <FormMessage className="text-xs text-red-500" />
-                    </FormItem>
-                  )}
-                />
+                              field.onChange(numericValue)
+                            }}
+                          />
+                        </FormControl>
+                        <FormMessage className="text-xs text-red-500" />
+                      </FormItem>
+                    )}
+                  />
 
-                <FormField
-                  control={form.control}
-                  name="categoryId"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-col">
-                      <FormLabel>Selecionar Categoria</FormLabel>
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <FormControl>
-                            <Button
-                              variant="outline"
-                              role="combobox"
-                              className={`
+                  <FormField
+                    control={form.control}
+                    name="categoryId"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-col justify-between">
+                        <FormLabel>Selecionar Categoria</FormLabel>
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <FormControl>
+                              <Button
+                                variant="outline"
+                                role="combobox"
+                                className={`
                                 justify-between
                                 ${!field.value && 'text-muted-foreground'}
                               `}
-                            >
-                              {field.value
-                                ? categoryActives &&
-                                  categoryActives.find(
-                                    (category) => category.id === field.value,
-                                  )?.name
-                                : 'Selecione a categoria'}
-                              <ChevronsUpDown className="opacity-50" />
-                            </Button>
-                          </FormControl>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-[400px] p-0">
-                          <Command>
-                            <CommandInput
-                              placeholder="Pesquisar Categoria"
-                              className="h-9"
-                            />
-                            <CommandList>
-                              <CommandEmpty>
-                                Categoria não encontrada
-                              </CommandEmpty>
-                              <CommandGroup>
-                                {categoryActives &&
-                                  categoryActives.map((category) => (
-                                    <CommandItem
-                                      value={category.id}
-                                      key={category.id}
-                                      onSelect={() => {
-                                        setValue('categoryId', category.id)
-                                      }}
-                                    >
-                                      {category.name}
-                                      <Check
-                                        className={`
+                              >
+                                {field.value
+                                  ? categoryActives &&
+                                    categoryActives.find(
+                                      (category) => category.id === field.value,
+                                    )?.name
+                                  : 'Selecione a categoria'}
+                                <ChevronsUpDown className="opacity-50" />
+                              </Button>
+                            </FormControl>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-[400px] p-0">
+                            <Command>
+                              <CommandInput
+                                placeholder="Pesquisar Categoria"
+                                className="h-9"
+                              />
+                              <CommandList>
+                                <CommandEmpty>
+                                  Categoria não encontrada
+                                </CommandEmpty>
+                                <CommandGroup>
+                                  {categoryActives &&
+                                    categoryActives.map((category) => (
+                                      <CommandItem
+                                        value={category.id}
+                                        key={category.id}
+                                        onSelect={() => {
+                                          setValue('categoryId', category.id)
+                                        }}
+                                      >
+                                        {category.name}
+                                        <Check
+                                          className={`
                                         ml-auto
                                         ${
                                           category.id === field.value
@@ -466,18 +494,19 @@ export function CreateOrEditProduct({
                                             : 'opacity-0'
                                         }
                                       `}
-                                      />
-                                    </CommandItem>
-                                  ))}
-                              </CommandGroup>
-                            </CommandList>
-                          </Command>
-                        </PopoverContent>
-                      </Popover>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                                        />
+                                      </CommandItem>
+                                    ))}
+                                </CommandGroup>
+                              </CommandList>
+                            </Command>
+                          </PopoverContent>
+                        </Popover>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
               </div>
             )}
 
@@ -542,12 +571,24 @@ export function CreateOrEditProduct({
                     Próximo <ChevronRight className="ml-2 size-4" />
                   </Button>
                 ) : (
-                  <Button
-                    type="button"
-                    onClick={() => handleSubmit(onSubmit)()}
-                  >
-                    {product ? 'Editar Produto' : 'Criar Produto'}
-                  </Button>
+                  <>
+                    <Button
+                      type="button"
+                      onClick={() => handleSubmit(onSubmit)()}
+                    >
+                      {product ? 'Editar Produto' : 'Criar Produto'}
+                    </Button>
+                    {!product && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={handleCreateAnotherProduct}
+                        className="ml-2"
+                      >
+                        Criar mais um produto
+                      </Button>
+                    )}
+                  </>
                 )}
               </div>
             </DialogFooter>
